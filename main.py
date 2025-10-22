@@ -1,33 +1,46 @@
-from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi import FastAPI, HTTPException
+import uvicorn
+from pydantic import BaseModel
 
 app = FastAPI()
 
-@app.post('/files')
-async def upload_file(uploaded_file: UploadFile):
-    file = uploaded_file.file
-    filename = uploaded_file.filename
-    with open(f"1_{filename}", 'wb') as f:
-        f.write(file.read())
-        
-    
-@app.post('/multiple_files')
-async def upload_files(uploaded_files: list[UploadFile]):
-    for uploaded_file in uploaded_files:
-        file = uploaded_file.file
-        filename = uploaded_file.filename
-        with open(f"1_{filename}", 'wb') as f:
-            f.write(file.read())
-            
-@app.get('/files/{filename}')
-async def get_file(filename: str):
-    return FileResponse(filename)
+books = [
+    {
+        'id': 1,
+        'title': 'Асинхронность в Python',
+        'author': 'Пушкин',
+    },
+    {
+        'id': 2,
+        'title': 'Backend в Python',
+        'author': 'Артем'
+    }
+]
 
-def interfile(filename: str):
-    with open(filename, "rb") as file:
-        while chunk:= file.read(1024 * 1024):
-            yield chunk
+@app.get('/books', tags=["Книги"], summary="Получить все книги")
+def read_books():
+    return books
 
-@app.get('/files/streaming/{filename}')
-async def get_streaming_file(filename: str):
-    return StreamingResponse(interfile(filename), media_type="video/mp4")
+@app.get('/books/{book_id}', tags=["Книги"], summary="Получить книгу")  # ← Исправил параметр
+def get_book(book_id: int):  # ← Должно совпадать с {book_id} в пути
+    for book in books:
+        if book["id"] == book_id: 
+            return book
+    # ← Убрал отступ, чтобы исключение вызывалось после проверки всех книг
+    raise HTTPException(status_code=404, detail="Книга не найдена")
+
+class NewBook(BaseModel):
+    title: str
+    author: str
+
+@app.post("/books", tags=["Книги"])
+def create_book(new_book: NewBook):
+    books.append({
+        "id": len(books) + 1,
+        "title": new_book.title,
+        "author": new_book.author
+    })
+    return {"success": True}
+
+if __name__ == '__main__':
+    uvicorn.run("main:app", reload=True)
