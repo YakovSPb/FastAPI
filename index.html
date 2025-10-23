@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Список книг</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .book {
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #3498db;
+            background-color: #f8f9fa;
+        }
+        .error {
+            color: #e74c3c;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #e74c3c;
+        }
+        .loading {
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <h1>Список книг</h1>
+    <div id="books-container">
+        <div class="loading">Загрузка...</div>
+    </div>
+
+    <script>
+        async function loadBooks() {
+            const container = document.getElementById('books-container');
+            
+            try {
+                const response = await fetch('http://localhost:8000/books');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const books = await response.json();
+                
+                if (books.length === 0) {
+                    container.innerHTML = '<div>Книги не найдены</div>';
+                    return;
+                }
+                
+                container.innerHTML = books.map(book => `
+                    <div class="book">
+                        <strong>Название:</strong> ${book.title}<br>
+                        <strong>Автор:</strong> ${book.author}
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="error">
+                        Ошибка при загрузке данных: ${error.message}
+                    </div>
+                `;
+                console.error('Ошибка:', error);
+            }
+        }
+
+        // Загружаем книги при старте приложения
+        loadBooks();
+    </script>
+</body>
+</html>
