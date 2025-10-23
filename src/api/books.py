@@ -1,6 +1,7 @@
 
-from typing import Annotated
-from fastapi import APIRouter, Depends
+import time
+from typing import Annotated, Callable
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 
 from src.api.dependencies import SessionDep
@@ -39,11 +40,13 @@ class PaginationParams(BaseModel):
 
 PaginationDep = Annotated[PaginationParams, Depends(PaginationParams)]
 
+
 @router.get("/books")
 async def get_books(
     session: SessionDep,
     pagination: PaginationDep,
     ) -> list[BookGetSchema]:
+    time.sleep(0.5)
     query = (
         select(BookModel)
         .limit(pagination.limit)
@@ -51,6 +54,7 @@ async def get_books(
         )
     result = await session.execute(query)
     return result.scalars().all()
+
 
 
 
